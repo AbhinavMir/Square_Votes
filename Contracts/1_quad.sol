@@ -3,10 +3,33 @@
 pragma solidity >=0.7.0 <0.8.0;
 
 
-/**
- * @title QuadVoting
- * @dev Quadratic Voting Contract
- */
+/*
+ * @title QuadVotingFactory
+ * @dev Contract for creating child contracts
+*/
+ 
+contract QuadVotingFactory{
+    address [] public listOfChildContracts;
+    
+    event ContractCreated(address contractAddress);
+    
+    function createChildContract(uint256 _initialSupply, uint256 _tokensPerPerson) public{
+        address newContract = address(new QuadVoting(_initialSupply, _tokensPerPerson, msg.sender));
+        
+        listOfChildContracts.push(newContract);
+        emit ContractCreated(newContract);
+    }
+    
+    function getDeployedChildContract() external view returns (address[] memory){
+        return listOfChildContracts;
+    }
+}
+
+
+/*
+ * @title QuadVotingFactory
+ * @dev Contract for creating child contracts
+*/
  
 contract QuadVoting {
     
@@ -33,7 +56,7 @@ contract QuadVoting {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
     mapping(address => bool) public approvedAddresses;
-    
+    ////////////////////////////////////////////////////////////////
     
     /////////////////// Voting related variables ///////////////////
     struct Poll {
@@ -49,11 +72,11 @@ contract QuadVoting {
     /////////////////////////////////////////////////////////////////
     
     /////////////////// constructor ///////////////////
-    constructor(uint256 _initialSupply, uint256 _tokensPerPerson) {
-        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
+    constructor(uint256 _initialSupply, uint256 _tokensPerPerson, address _msgSender) {
+        owner = _msgSender; // 'msg.sender' is sender of current call, contract deployer for a constructor
         totalSupply = _initialSupply;
         tokensPerPerson = _tokensPerPerson;
-        balanceOf[msg.sender] = _tokensPerPerson;
+        balanceOf[_msgSender] = _tokensPerPerson;
         balanceOf[address(this)] = _initialSupply - _tokensPerPerson;
         decimals = 2;
     }
@@ -81,6 +104,11 @@ contract QuadVoting {
         transfer(0x0000000000000000000000000000000000000000, votes);
         return pollMap[selectedPoll].votes[selectedOption];
     }
+    
+    function getVotes(uint256 selectedPoll) external view returns (uint256[] memory){
+        return pollMap[selectedPoll].votes;
+    }
+    
     ////////////////////////////////////////////////////////////
     
     
